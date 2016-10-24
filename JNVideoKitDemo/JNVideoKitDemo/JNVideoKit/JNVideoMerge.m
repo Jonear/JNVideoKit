@@ -8,6 +8,7 @@
 
 #import "JNVideoMerge.h"
 #import <AVFoundation/AVFoundation.h>
+#import <UIKit/UIKit.h>
 
 @implementation JNVideoMerge
 
@@ -94,6 +95,10 @@ static BOOL s_b_merge_success = YES;
     if (videoPathArray.count == 0 || str_merge_path.length==0) {
         block(NO);
         return NO;
+    }
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:str_merge_path]) {
+        [[NSFileManager defaultManager] removeItemAtURL:[NSURL fileURLWithPath:str_merge_path] error:nil];
     }
     
     dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
@@ -192,11 +197,101 @@ static BOOL s_b_merge_success = YES;
 }
 
 
-+ (BOOL)cropVideoFilePath:(NSArray *)videoPathArray
-            mergeFilePath:(NSString*)str_merge_path
++ (BOOL)cropVideoFilePath:(NSString *)videoPath
+            mergeFilePath:(NSString *)str_merge_path
                 startTime:(CMTime)startTime
-                  endTime:(CMTime)endTime
+               lengthTime:(CMTime)lengthTime
                completion:(CompletionBack)block {
+    
+    if (videoPath.length == 0 || str_merge_path.length==0) {
+        block(NO);
+        return NO;
+    }
+    
+    if ([[NSFileManager defaultManager] fileExistsAtPath:str_merge_path]) {
+        [[NSFileManager defaultManager] removeItemAtURL:[NSURL fileURLWithPath:str_merge_path] error:nil];
+    }
+    
+    //1 — 采集
+    AVAsset *videoAsset = [AVAsset assetWithURL:[NSURL fileURLWithPath:videoPath]];
+    // 2 创建AVMutableComposition实例. apple developer 里边的解释 【AVMutableComposition is a mutable subclass of AVComposition you use when you want to create a new composition from existing assets. You can add and remove tracks, and you can add, remove, and scale time ranges.】
+    AVMutableComposition *mixComposition = [[AVMutableComposition alloc] init];
+    
+    // 3 - 视频通道  工程文件中的轨道，有音频轨、视频轨等，里面可以插入各种对应的素材
+    AVMutableCompositionTrack *videoTrack = [mixComposition addMutableTrackWithMediaType:AVMediaTypeVideo
+                                                                        preferredTrackID:kCMPersistentTrackID_Invalid];
+    NSError *error = nil;
+    // 这块是裁剪,rangtime .前面的是开始时间,后面是裁剪多长 (我这裁剪的是从第二秒开始裁剪，裁剪2.55秒时长.)
+    [videoTrack insertTimeRange:CMTimeRangeMake(startTime, lengthTime)
+                        ofTrack:[[videoAsset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0]
+                         atTime:kCMTimeZero
+                          error:&error];
+    
+    // 3.1 AVMutableVideoCompositionInstruction 视频轨道中的一个视频，可以缩放、旋转等
+    AVMutableVideoCompositionInstruction *mainInstruction = [AVMutableVideoCompositionInstruction videoCompositionInstruction];
+    mainInstruction.timeRange = CMTimeRangeMake(kCMTimeZero, lengthTime);
+    
+    // 3.2 AVMutableVideoCompositionLayerInstruction 一个视频轨道，包含了这个轨道上的所有视频素材
+    AVMutableVideoCompositionLayerInstruction *videolayerInstruction = [AVMutableVideoCompositionLayerInstruction videoCompositionLayerInstructionWithAssetTrack:videoTrack];
+    AVAssetTrack *videoAssetTrack = [[videoAsset tracksWithMediaType:AVMediaTypeVideo] objectAtIndex:0];
+    UIImageOrientation videoAssetOrientation_  = UIImageOrientationUp;
+    BOOL isVideoAssetPortrait_  = NO;
+    CGAffineTransform videoTransform = videoAssetTrack.preferredTransform;
+    if (videoTransform.a == 0 && videoTransform.b == 1.0 && videoTransform.c == -1.0 && videoTransform.d == 0) {
+        videoAssetOrientation_ = UIImageOrientationRight;
+        isVideoAssetPortrait_ = YES;
+    }
+    if (videoTransform.a == 0 && videoTransform.b == -1.0 && videoTransform.c == 1.0 && videoTransform.d == 0) {
+        videoAssetOrientation_ =  UIImageOrientationLeft;
+        isVideoAssetPortrait_ = YES;
+    }
+    if (videoTransform.a == 1.0 && videoTransform.b == 0 && videoTransform.c == 0 && videoTransform.d == 1.0) {
+        videoAssetOrientation_ =  UIImageOrientationUp;
+    }
+    if (videoTransform.a == -1.0 && videoTransform.b == 0 && videoTransform.c == 0 && videoTransform.d == -1.0) {
+        videoAssetOrientation_ = UIImageOrientationDown;
+    }
+    [videolayerInstruction setTransform:videoAssetTrack.preferredTransform atTime:kCMTimeZero];
+    [videolayerInstruction setOpacity:0.0 atTime:lengthTime];
+    
+    // 3.3 - Add instructions
+    mainInstruction.layerInstructions = [NSArray arrayWithObjects:videolayerInstruction,nil];
+    // AVMutableVideoComposition：管理所有视频轨道，可以决定最终视频的尺寸，裁剪需要在这里进行
+    AVMutableVideoComposition *mainCompositionInst = [AVMutableVideoComposition videoComposition];
+    
+    CGSize naturalSize;
+    if(isVideoAssetPortrait_){
+        naturalSize = CGSizeMake(videoAssetTrack.naturalSize.height, videoAssetTrack.naturalSize.width);
+    } else {
+        naturalSize = videoAssetTrack.naturalSize;
+    }
+    
+    float renderWidth, renderHeight;
+    renderWidth = naturalSize.width;
+    renderHeight = naturalSize.height;
+    mainCompositionInst.renderSize = CGSizeMake(renderWidth, renderHeight);
+    mainCompositionInst.instructions = [NSArray arrayWithObject:mainInstruction];
+    mainCompositionInst.frameDuration = CMTimeMake(1, 30);
+    // 4 - Get path
+    NSURL *outUrl = [NSURL fileURLWithPath:str_merge_path];
+    
+    // 5 - Create exporter
+    AVAssetExportSession *exporter = [[AVAssetExportSession alloc] initWithAsset:mixComposition
+                                                                      presetName:AVAssetExportPresetHighestQuality];
+    exporter.outputURL = outUrl;
+    exporter.outputFileType = AVFileTypeMPEG4;
+    exporter.shouldOptimizeForNetworkUse = YES;
+    exporter.videoComposition = mainCompositionInst;
+    [exporter exportAsynchronouslyWithCompletionHandler:^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (AVAssetExportSessionStatusCompleted != exporter.status) {
+                NSLog(@"crop video error: %d", (int)exporter.status);
+                block(NO);
+            }else{
+                block(YES);
+            }
+        });
+    }];
     
     return YES;
 }

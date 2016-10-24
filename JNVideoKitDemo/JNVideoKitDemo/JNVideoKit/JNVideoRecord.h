@@ -53,7 +53,7 @@
 /**
  *  继续 (小视频使用)
  */
-- (void)continueVideoCapture:(NSString *)filePath;
+- (void)resumeVideoCapture:(NSString *)filePath;
 
 /**
  *  选择滤镜

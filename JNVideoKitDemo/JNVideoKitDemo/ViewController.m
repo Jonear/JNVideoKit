@@ -9,6 +9,7 @@
 #import "ViewController.h"
 #import "JNVideoRecord.h"
 #import "JNVideoPlayer.h"
+#import "JNVideoMerge.h"
 
 @interface ViewController ()
 
@@ -86,6 +87,25 @@
         [_videoPlayer pause];
     } else if ([title isEqualToString:@"crop"]) {
         // crop
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+        NSString *outpath = [[paths objectAtIndex:0] stringByAppendingPathComponent:@"b.mp4"];
+        
+        NSLog(@"~~~~~~~croping");
+        CMTime time = CMTimeMake([_videoPlayer duration]/2*[_videoPlayer timeScale], [_videoPlayer timeScale]);
+        [JNVideoMerge cropVideoFilePath:_strpath
+                          mergeFilePath:outpath
+                              startTime:time
+                             lengthTime:time
+                             completion:^(BOOL succes) {
+                                 NSLog(@"~~~~~~~crop success:%zd, path:%@", succes, outpath);
+                                 [_videoPlayer initVideoPlayer:_imageView videoFilePath:[NSURL fileURLWithPath:outpath]];
+                                 
+                                 // removeObserver
+                                 [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+                                 [_videoPlayer play];
+                                 
+                                 [sender setTitle:@"finish" forState:UIControlStateNormal];
+                             }];
     }
 }
 

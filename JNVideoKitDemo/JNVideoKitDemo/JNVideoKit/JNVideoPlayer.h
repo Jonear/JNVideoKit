@@ -23,9 +23,10 @@ extern NSString *const AVPlayerItemFailedToPlayToEndTimeNotification; //播放�
 - (BOOL)play;
 - (BOOL)pause;
 - (BOOL)stop;
-- (BOOL)seek:(float)f_seek_time;
+- (BOOL)seek:(CGFloat)f_seek_time;
 
-- (float)currentTime;
-- (float)duration;
+- (CGFloat)currentTime;
+- (CGFloat)duration;
+- (CGFloat)timeScale;
 
 @end

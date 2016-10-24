@@ -81,9 +81,9 @@
     }
 }
 
-- (BOOL)seek:(float)f_seek_time{
+- (BOOL)seek:(CGFloat)f_seek_time{
     if (_player) {
-        CMTime time = CMTimeMake(f_seek_time, _player.currentTime.timescale);
+        CMTime time = CMTimeMake(f_seek_time*_player.currentTime.timescale, _player.currentTime.timescale);
         [_player seekToTime:time];
         return YES;
     } else {
@@ -91,7 +91,7 @@
     }
 }
 
-- (float)currentTime{
+- (CGFloat)currentTime{
     if (_player) {
         CMTime ctime = _player.currentTime;
         UInt64 currentTimeSec = ctime.value/ctime.timescale;
@@ -101,7 +101,7 @@
     }
 }
 
-- (float)duration{
+- (CGFloat)duration{
     if (_player && _playerItem) {
         CMTime ctime = _playerItem.duration;
         UInt64 currentTimeSec = ctime.value/ctime.timescale;
@@ -109,6 +109,10 @@
     }else {
         return 0;
     }
+}
+
+- (CGFloat)timeScale {
+    return _player.currentTime.timescale;
 }
 
 // MARK: - play notifcation

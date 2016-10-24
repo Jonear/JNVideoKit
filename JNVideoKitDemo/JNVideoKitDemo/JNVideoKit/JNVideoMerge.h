@@ -47,18 +47,18 @@ typedef void (^CompletionBack)(BOOL succes);
 /**
  裁剪视频
 
- @param videoPathArray 视频路径
+ @param videoPath      视频路径
  @param str_merge_path 裁剪完成后导出路径
  @param startTime      开始时间
- @param endTime        结束时间
+ @param lengthTime     结束时间
  @param block          完成回调
 
  @return 执行是否成功
  */
-+ (BOOL)cropVideoFilePath:(NSArray *)videoPathArray
++ (BOOL)cropVideoFilePath:(NSString *)videoPath
             mergeFilePath:(NSString*)str_merge_path
                 startTime:(CMTime)startTime
-                  endTime:(CMTime)endTime
+               lengthTime:(CMTime)lengthTime
                completion:(CompletionBack)block;
 
 @end

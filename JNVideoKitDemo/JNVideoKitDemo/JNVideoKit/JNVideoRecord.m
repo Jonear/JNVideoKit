@@ -122,7 +122,7 @@
     }
 }
 
-- (void)continueVideoCapture:(NSString *)filePath {
+- (void)resumeVideoCapture:(NSString *)filePath {
     if (filePath.length > 0) {
         [[NSFileManager defaultManager] removeItemAtPath:filePath error:nil];
         [self creatVideoWriter:filePath];
