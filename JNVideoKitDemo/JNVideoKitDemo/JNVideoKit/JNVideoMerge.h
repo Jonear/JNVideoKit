@@ -1,12 +1,13 @@
 //
 //  KSVideoMerge.h
-//  KwSing
+//  JNVideoKitDemo
 //
-//  Created by 永杰 单 on 12-8-30.
-//  Copyright (c) 2012年 酷我音乐. All rights reserved.
+//  Created by Jonear on 12-8-30.
+//  Copyright (c) 2012年 Jonear. All rights reserved.
 //
 
 #import <Foundation/Foundation.h>
+#import <CoreMedia/CMTime.h>
 
 typedef void (^CompletionBack)(BOOL succes);
 
@@ -22,10 +23,10 @@ typedef void (^CompletionBack)(BOOL succes);
 
  @return 执行是否成功
  */
-+(BOOL)mergeAVFile:(NSString*)str_audio_path
-     videoFilePath:(NSString*)str_video_path
-     mergeFilePath:(NSString*)str_merge_path
-        completion:(CompletionBack)block;
++ (BOOL)mergeAVFile:(NSString*)str_audio_path
+      videoFilePath:(NSString*)str_video_path
+      mergeFilePath:(NSString*)str_merge_path
+         completion:(CompletionBack)block;
 
 
 /**
@@ -37,8 +38,27 @@ typedef void (^CompletionBack)(BOOL succes);
 
  @return 执行是否成功
  */
-+(BOOL)mergeFreeVideoFilePath:(NSArray *)videoPathArray
-                mergeFilePath:(NSString*)str_merge_path
-                   completion:(CompletionBack)block;
++ (BOOL)mergeFreeVideoFilePath:(NSArray *)videoPathArray
+                 mergeFilePath:(NSString*)str_merge_path
+                    completion:(CompletionBack)block;
+
+
+
+/**
+ 裁剪视频
+
+ @param videoPathArray 视频路径
+ @param str_merge_path 裁剪完成后导出路径
+ @param startTime      开始时间
+ @param endTime        结束时间
+ @param block          完成回调
+
+ @return 执行是否成功
+ */
++ (BOOL)cropVideoFilePath:(NSArray *)videoPathArray
+            mergeFilePath:(NSString*)str_merge_path
+                startTime:(CMTime)startTime
+                  endTime:(CMTime)endTime
+               completion:(CompletionBack)block;
 
 @end

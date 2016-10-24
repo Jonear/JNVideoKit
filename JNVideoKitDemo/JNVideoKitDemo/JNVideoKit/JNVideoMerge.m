@@ -1,14 +1,13 @@
 //
 //  KSVideoMerge.m
-//  KwSing
+//  JNVideoKitDemo
 //
-//  Created by 永杰 单 on 12-8-30.
-//  Copyright (c) 2012年 酷我音乐. All rights reserved.
+//  Created by Jonear on 12-8-30.
+//  Copyright (c) 2012年 Jonear. All rights reserved.
 //
 
 #import "JNVideoMerge.h"
 #import <AVFoundation/AVFoundation.h>
-#import <CoreMedia/CMTime.h>
 
 @implementation JNVideoMerge
 
@@ -188,6 +187,16 @@ static BOOL s_b_merge_success = YES;
             });
         }];
     });
+    
+    return YES;
+}
+
+
++ (BOOL)cropVideoFilePath:(NSArray *)videoPathArray
+            mergeFilePath:(NSString*)str_merge_path
+                startTime:(CMTime)startTime
+                  endTime:(CMTime)endTime
+               completion:(CompletionBack)block {
     
     return YES;
 }

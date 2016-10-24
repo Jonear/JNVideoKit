@@ -2,8 +2,8 @@
 //  ViewController.m
 //  JNVideoKitDemo
 //
-//  Created by NetEase on 16/10/24.
-//  Copyright © 2016年 NetEase. All rights reserved.
+//  Created by Jonear on 16/10/24.
+//  Copyright © 2016年 Jonear. All rights reserved.
 //
 
 #import "ViewController.h"
@@ -72,6 +72,10 @@
         [_videoRecord stopVideoCapture];
     
         [_videoPlayer initVideoPlayer:_imageView videoFilePath:[NSURL fileURLWithPath:_strpath]];
+        
+        // notification
+        [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playFinishNotification:) name:AVPlayerItemDidPlayToEndTimeNotification object:_videoPlayer.playerItem];
     } else if ([title isEqualToString:@"play"]) {
         [sender setTitle:@"stop play" forState:UIControlStateNormal];
         
@@ -80,7 +84,13 @@
         [sender setTitle:@"play" forState:UIControlStateNormal];
         
         [_videoPlayer pause];
+    } else if ([title isEqualToString:@"crop"]) {
+        // crop
     }
+}
+
+- (void)playFinishNotification:(id)sender {
+    [_demoButton setTitle:@"crop" forState:UIControlStateNormal];
 }
 
 

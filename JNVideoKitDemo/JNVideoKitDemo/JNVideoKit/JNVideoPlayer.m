@@ -1,14 +1,14 @@
  //
 //  KSVideoPlayer.m
-//  KwSing
+//  JNVideoKitDemo
 //
-//  Created by 永杰 单 on 12-8-23.
-//  Copyright (c) 2012年 酷我音乐. All rights reserved.
+//  Created by Jonear on 12-8-23.
+//  Copyright (c) 2012年 Jonear. All rights reserved.
 //
 
 #import "JNVideoPlayer.h"
 #import <AudioToolbox/AudioServices.h>
-#import <AVFoundation/AVFoundation.h>
+
 
 @implementation JNVideoPlayer {
     AVPlayer *_player;
@@ -17,16 +17,29 @@
 - (BOOL)initVideoPlayer:(UIView *)p_view videoFilePath:(NSURL*)videoUrl {
     if (p_view && videoUrl) {
         //使用playerItem获取视频的信息，当前播放时间，总时间等
-        AVPlayerItem *playerItem = [AVPlayerItem playerItemWithURL:videoUrl];
+        _playerItem = [AVPlayerItem playerItemWithURL:videoUrl];
         //player是视频播放的控制器，可以用来快进播放，暂停等
-        _player = [AVPlayer playerWithPlayerItem:playerItem];
+        _player = [AVPlayer playerWithPlayerItem:_playerItem];
         AVPlayerLayer *playerLayer = [AVPlayerLayer playerLayerWithPlayer:_player];
         playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
         //调用一下setter方法
         playerLayer.frame = p_view.bounds;
         
         [p_view.layer addSublayer:playerLayer];
-        _isPlaying = false;
+        
+        _isPlaying = NO;
+        
+        
+        [[NSNotificationCenter defaultCenter] removeObserver:self];
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(playFinishNotification:)
+                                                     name:AVPlayerItemDidPlayToEndTimeNotification
+                                                   object:_playerItem];
+        
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(playFiledNotification:)
+                                                     name:AVPlayerItemFailedToPlayToEndTimeNotification
+                                                   object:_playerItem];
         
         return YES;
     }
@@ -37,7 +50,7 @@
 - (BOOL)play {
     if (_player) {
         [_player play];
-        _isPlaying = true;
+        _isPlaying = YES;
         return YES;
     }else {
         return NO;
@@ -48,7 +61,20 @@
 - (BOOL)pause{
     if (_player) {
         [_player pause];
-        _isPlaying = false;
+        _isPlaying = NO;
+        return YES;
+    }else {
+        return NO;
+    }
+}
+
+// 停止
+- (BOOL)stop {
+    if (_player) {
+        [self seek:0.];
+        [_player play];
+        [_player pause];
+        _isPlaying = NO;
         return YES;
     }else {
         return NO;
@@ -56,40 +82,43 @@
 }
 
 - (BOOL)seek:(float)f_seek_time{
-//    if (m_pMoviePlayer && (f_seek_time < m_pMoviePlayer.playableDuration)) {
-//        NSLog(@"~~~~~~~~~mv:%f", f_seek_time+1);
-//        if (m_bPlaying) {
-//            [m_pMoviePlayer pause];
-//            m_pMoviePlayer.currentPlaybackTime = f_seek_time+1;
-//            [m_pMoviePlayer play];
-//            
-//            return true;
-//        }else {
-//            [m_pMoviePlayer pause];
-//            m_pMoviePlayer.currentPlaybackTime = f_seek_time+1;
-//            [m_pMoviePlayer play];
-//            [m_pMoviePlayer pause];
-//            return true;
-//        }
-//    }else {
-        return false;
-//    }
+    if (_player) {
+        CMTime time = CMTimeMake(f_seek_time, _player.currentTime.timescale);
+        [_player seekToTime:time];
+        return YES;
+    } else {
+        return NO;
+    }
 }
 
 - (float)currentTime{
-//    if (m_pMoviePlayer && 0 < m_pMoviePlayer.duration) {
-//        return m_pMoviePlayer.currentPlaybackTime;
-//    }else {
+    if (_player) {
+        CMTime ctime = _player.currentTime;
+        UInt64 currentTimeSec = ctime.value/ctime.timescale;
+        return currentTimeSec;
+    }else {
         return 0;
-//    }
+    }
 }
 
 - (float)duration{
-//    if (_player) {
-////        return _player.duration;
-//    }else {
+    if (_player && _playerItem) {
+        CMTime ctime = _playerItem.duration;
+        UInt64 currentTimeSec = ctime.value/ctime.timescale;
+        return currentTimeSec;
+    }else {
         return 0;
-//    }
+    }
+}
+
+// MARK: - play notifcation
+- (void)playFinishNotification:(NSNotification *)notification {
+    _isPlaying = NO;
+    [self seek:0.];
+}
+
+- (void)playFiledNotification:(NSNotification *)notification {
+    _isPlaying = NO;
 }
 
 @end

@@ -1,9 +1,9 @@
 //
 //  KSVideoRecordNew.m
-//  KwSing
+//  JNVideoKitDemo
 //
-//  Created by zg.shao on 14-10-14.
-//  Copyright (c) 2014年 kuwo.cn. All rights reserved.
+//  Created by Jonear on 14-10-14.
+//  Copyright (c) 2014年 Jonear. All rights reserved.
 //
 
 #import "JNVideoRecord.h"
